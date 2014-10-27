@@ -5,7 +5,7 @@
 //  Created by anzori  on 10/3/14.
 //  Copyright (c) 2014 anzori . All rights reserved.
 //
-
+#import "NavControler.h"
 #import "AppDelegate.h"
 #import "GameViewController.h"
 @interface AppDelegate ()
@@ -42,5 +42,4 @@
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
-
 @end

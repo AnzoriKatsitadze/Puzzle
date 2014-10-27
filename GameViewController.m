@@ -8,10 +8,9 @@
 
 #import "GameViewController.h"
 #import "GameScene.h"
+#import "MenuScene.h"
 
 @implementation GameViewController
-
-
 
 - (void)viewDidLoad
 {
@@ -19,16 +18,10 @@
     
     // Configure the view.
     SKView * skView = (SKView *)self.view;
-    skView.showsFPS = YES;
-    skView.showsNodeCount = YES;
-   
-  //  self.navigationItem.hidesBackButton = YES;
-  //  self.navigationItem.leftBarButtonItem = nil;
-    // Create and configure the scene.
-    SKScene * scene = [GameScene sceneWithSize:skView.bounds.size];
+    
+    SKScene *scene = [MenuScene sceneWithSize:skView.bounds.size];
     scene.scaleMode = SKSceneScaleModeAspectFill;
     
-    // Present the scene.
     [skView presentScene:scene];
 }
 
@@ -39,11 +32,7 @@
 
 - (NSUInteger)supportedInterfaceOrientations
 {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        return UIInterfaceOrientationMaskAllButUpsideDown;
-    } else {
-        return UIInterfaceOrientationMaskAll;
-    }
+    return UIInterfaceOrientationMaskLandscape;
 }
 
 - (void)didReceiveMemoryWarning

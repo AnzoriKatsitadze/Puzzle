@@ -8,8 +8,10 @@
 
 #import "PuzzleSprite.h"
 #import <SpriteKit/SpriteKit.h>
-
 static NSString * const completeAnNodeName = @"notMovable";
+
+@class MenuScene;
+@class PuzzleSprite;
 
 @interface GameScene : SKScene<UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 {
@@ -52,8 +54,9 @@ static NSString * const completeAnNodeName = @"notMovable";
     
     SKSpriteNode *originalImage;
     SKSpriteNode *originImgContur;
-    SKSpriteNode *blackPictureNode;
     SKSpriteNode *readyPictureNode;
+    
+    SKSpriteNode *backgroundImg;
     
     float centerPozitionX;
     float centerPozitionY;
@@ -67,13 +70,18 @@ static NSString * const completeAnNodeName = @"notMovable";
     NSDictionary *destinationPosition;
     NSString * screenResolution;
     
+    SKSpriteNode *blackArea;
+    
+    SKSpriteNode *homeButton;
 }
+@property (nonatomic, assign) NSMutableArray * readyPuzzlesArray;
 @property (nonatomic, assign) BOOL    isRotate;
 
 @property (nonatomic, assign) CGPoint savePuzzlePoint;
 
 @property (strong, nonatomic) UIWindow *window;
 @property (nonatomic, assign) float puzzleRotate;
+@property (nonatomic, assign) int setPuzzlesCounter;
 
 @property (nonatomic) float scaleIn;
 @property (nonatomic) float scaleOut;
@@ -83,5 +91,13 @@ static NSString * const completeAnNodeName = @"notMovable";
 @property (nonatomic) int   minMoveY;
 @property (nonatomic) int   maxMveX;
 @property (nonatomic) float scaleForSelectedImg;
+
+@property (nonatomic, strong) MenuScene *menuScene;
+
+@property (nonatomic) int saveAnimalIndex;
+@property (nonatomic) NSString *animalName;
+
+-(void) loadRedyPicture;
+- (void) updateZpositions:(PuzzleSprite *) sprite;
 
 @end
