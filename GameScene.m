@@ -8,10 +8,6 @@
 //  Copyright (c) 2014 anzori . All rights reserved.
 //
 
-//#define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
-//#define IS_IPHONE_5 ( fabs( ( double )[ [ UIScreen mainScreen ] bounds ].size.height - ( double )568 ) < DBL_EPSILON )
-//#define IS_IPAD    (UI_USER_INTERFACE_IDIOM()==UIUserInterfaceIdiomPad)
-
 #define CAMERA_TRANSFORM
 
 #define WIDTH_IPAD 1024
@@ -28,14 +24,12 @@
 #define IS_IPHONE_4 ( [ [ UIScreen mainScreen ] bounds ].size.width == WIDTH_IPHONE_4 )
 
 
-
 #import "GameScene.h"
 #import "UIImage+Crop.h"
 #import "ImportImageScene.h"
 #import "PuzzleSprite.h"
 #import "MenuScene.h"
 #import "AppDelegate.h"
-#import "ImagePickerController.h"
 
 @implementation GameScene
 
@@ -43,6 +37,8 @@
 {
     if (self = [super initWithSize:size])
     {
+       
+        
         cropNodesArray      = [[NSMutableArray alloc] init];
         PuzzlsArray         = [[NSMutableArray alloc] init];
         animalsArray        = [[NSMutableArray alloc] init];
@@ -54,6 +50,22 @@
         
         centerPozitionX = [[UIScreen mainScreen] bounds].size.width/2;
         centerPozitionY = [[UIScreen mainScreen] bounds].size.height/2;
+        
+        uiscreenWidth = [[UIScreen mainScreen] bounds].size.width;
+        uiscreenHeight = [[UIScreen mainScreen] bounds].size.height;
+        
+        if (centerPozitionX<centerPozitionY)
+        {
+            int savedPos = centerPozitionX;
+            centerPozitionX = centerPozitionY;
+            centerPozitionY= savedPos;
+            
+            float savedDimension = uiscreenWidth;
+            uiscreenWidth=uiscreenHeight;
+            uiscreenHeight=savedDimension;
+        }
+        
+        
         zPositionCounter = 0;
         setPuzzlesCounter = 0;
         
@@ -62,7 +74,8 @@
         homeButton.position = CGPointMake(20, 300);
         [self addChild:homeButton];
         homeButton.name = @"homeButton";
-        self.view.backgroundColor = [UIColor redColor];
+        
+        isIphone5 = [self isHdRes];
         
         [self loadBackground];
         
@@ -77,30 +90,28 @@
             self.minMoveY = 10;
             self.scaleForSelectedImg = 1.0;
         }
-        if (IS_IPHONE)
+       
+        if (isIphone5)
         {
-            if (IS_IPHONE_5)
-            {
-                self.scaleIn = 1;
-                self.scaleOut = 1;
-                self.JumpScale = 1.1;
-                self.moveArea  = 350;
-                self.maxMveX   = 520;
-                self.maxMoveY  = 278;
-                self.minMoveY  = 45;
-                self.scaleForSelectedImg = 1.0;
-            }
-            else
-            {
-                self.maxMveX = 443;
-                self.minMoveY = 37;
-                self.maxMoveY = 285;
-                self.moveArea = 335;
-                self.scaleOut = 1;
-                self.scaleIn = 1;
-                self.JumpScale = 1.1;
-                self.scaleForSelectedImg = 1.0;
-            }
+            self.scaleIn = 1;
+            self.scaleOut = 1;
+            self.JumpScale = 1.1;
+            self.moveArea  = 350;
+            self.maxMveX   = 520;
+            self.maxMoveY  = 278;
+            self.minMoveY  = 45;
+            self.scaleForSelectedImg = 1.0;
+        }
+        else
+        {
+            self.maxMveX = 443;
+            self.minMoveY = 37;
+            self.maxMoveY = 285;
+            self.moveArea = 335;
+            self.scaleOut = 1;
+            self.scaleIn = 1;
+            self.JumpScale = 1.1;
+            self.scaleForSelectedImg = 1.0;
         }
         
         self.saveAnimalIndex = [[NSUserDefaults standardUserDefaults] integerForKey:@"saveAnimalIndex"];
@@ -114,25 +125,71 @@
         self.animalName = [animalsArray objectAtIndex:self.saveAnimalIndex];
         
         NSString *savedValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"preferenceName"];
-//        if ([savedValue isEqualToString:@"easyBoard"])
-//        {
-//            addOriginAndblackPTimer = [NSTimer scheduledTimerWithTimeInterval:0
-//                                                                       target:self
-//                                                                     selector:@selector(addNinePuzzlesModel)
-//                                                                     userInfo:nil repeats:NO];
-//
-//        }
-//        
-//        if ([savedValue isEqualToString:@"hardBoard"])
-//        {
-//            addOriginAndblackPTimerForSixTeen = [NSTimer scheduledTimerWithTimeInterval:0
-//                                                                                 target:self
-//                                                                               selector:@selector(addSixteenPuzzlesModel)
-//                                                                               userInfo:nil repeats:NO];
-//        }
-        [self addimportImage];
+        
+        BOOL isselectedTakePicture = [[NSUserDefaults standardUserDefaults] boolForKey:@"iseSelectedTakePicture"];
+        if (isselectedTakePicture == NO)
+        {
+            if ([savedValue isEqualToString:@"easyBoard"])
+            {
+                addOriginAndblackPTimer = [NSTimer scheduledTimerWithTimeInterval:0
+                                                                           target:self
+                                                                         selector:@selector(addNinePuzzlesModel)
+                                                                         userInfo:nil repeats:NO];
+                
+            }
+            
+            if ([savedValue isEqualToString:@"hardBoard"])
+            {
+                addOriginAndblackPTimerForSixTeen = [NSTimer scheduledTimerWithTimeInterval:0
+                                                                                     target:self
+                                                                                   selector:@selector(addSixteenPuzzlesModel)
+                                                                                   userInfo:nil repeats:NO];
+            }
+        }
     }
     return self;
+}
+
+- (void) useImage
+{
+    SKTexture *texture = [SKTexture textureWithImage:_teakeImage];
+    saveTextureForimportImg = texture;
+    originalImage = [SKSpriteNode spriteNodeWithTexture:texture];
+    originalImage.position = CGPointMake(158, 162);
+    originalImage.zPosition = 1;
+    originalImage.name = @"aaaaaaa";
+    originalImage.xScale = originalImage.yScale = 0.5;
+    [self addChild:originalImage];
+    
+    NSString *savedValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"preferenceName"];
+    if ([savedValue isEqualToString:@"easyBoard"])
+    {
+        [self woundingPuzzle:_teakeImage];
+        [self addImageCountur];
+    }
+    if ([savedValue isEqualToString:@"hardBoard"])
+    {
+        [self woundingSixteenPuzzle:_teakeImage];
+        [self addImageCounturSixteen];
+    }
+    [self loadBackground];
+    
+    puzzlesMoveTimer = [NSTimer scheduledTimerWithTimeInterval:2
+                                                        target:self
+                                                      selector:@selector(movePuzzles)
+                                                      userInfo:nil repeats:NO];
+}
+
+- (BOOL) isHdRes
+{
+    // iphone 5/5c/5s/6/6s etc.
+    float ratio = 16.0f / 9.0f, EPS = 5e-3f;
+    CGSize screenSize = [UIScreen mainScreen].bounds.size;
+    float maxS = MAX(screenSize.width, screenSize.height), minS = MIN(screenSize.width, screenSize.height);
+    float screenRatio = maxS / minS;
+    if(fabs(screenRatio - ratio) <= EPS)
+        return true;
+    return false;
 }
 
 -(void) addSixteenPuzzlesModel
@@ -206,16 +263,13 @@
         screenResolution = @"iPad";
     }
     
-    if (IS_IPHONE)
+    if (isIphone5)
     {
-        if (IS_IPHONE_5)
-        {
-            screenResolution = @"r4";
-        }
-        else
-        {
-            screenResolution = @"r3.5";
-        }
+        screenResolution = @"r4";
+    }
+    else
+    {
+        screenResolution = @"r3.5";
     }
     
        destinationPosition = array[0][screenResolution][@"destinationPosition"];
@@ -242,16 +296,13 @@
         screenResolution = @"iPad";
     }
     
-    if (IS_IPHONE)
+    if (isIphone5)
     {
-        if (IS_IPHONE_5)
-        {
-            screenResolution = @"r4";
-        }
-        else
-        {
-            screenResolution = @"r3.5";
-        }
+        screenResolution = @"r4";
+    }
+    else
+    {
+        screenResolution = @"r3.5";
     }
     
     destinationPosition = array[0][screenResolution][@"destinationPosition"];
@@ -320,7 +371,7 @@
 }
 
 - (void) updateZpositions:(PuzzleSprite *) sprite{
-    int max = 6;
+    int max = 9;
     for (SKSpriteNode *spriteNode in self.children) {
         if (spriteNode != sprite) {
             if (max < spriteNode.zPosition) {
@@ -339,35 +390,15 @@
     NSLog(@"%@", node.name);
     if ([node.name isEqualToString:@"homeButton"])
     {
-        MenuScene *menuScene = [MenuScene sceneWithSize:self.view.frame.size];
-        menuScene.scaleMode = SKSceneScaleModeFill;
-        [self.view presentScene:menuScene ];
+        [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"iseSelectedTakePicture"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        SKView * skView = (SKView *)self.view;
+        MenuScene *menuScene = [MenuScene sceneWithSize:skView.bounds.size];
+        menuScene.scaleMode = SKSceneScaleModeAspectFill;
+        [skView presentScene:menuScene ];
     }
     //
-    
-    if ([node.name isEqualToString:@"slectedImage"])
-    {
-        ImagePickerController *picker = [[ImagePickerController alloc] init];
-        picker.delegate = self;
-        picker.allowsEditing = YES;
-        picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-        [[[[[UIApplication sharedApplication] delegate] window] rootViewController] presentViewController:picker
-                                                                                                 animated:YES
-                                                                                               completion:^{
-                                                                                                   
-                                                                                               }];
-    }
-    
-    if ([node.name isEqualToString:@"takeImage"])
-    {
-        ImagePickerController *picker = [[ImagePickerController alloc] init];
-        picker.delegate = self;
-        picker.sourceType = UIImagePickerControllerSourceTypeCamera;
-        [[[[[UIApplication sharedApplication] delegate] window] rootViewController] presentViewController:picker
-                                                                                                 animated:YES
-                                                                                               completion:^{
-                                                                                               }];
-    }
 }
 
 
@@ -380,7 +411,7 @@
     for (int i=0; i<cropNodesArray.count; i++)
     {
         PuzzleSprite *sprite = [cropNodesArray objectAtIndex:i];
-        sprite.zPosition = 5;
+        sprite.zPosition = 3;
         SKAction *moveUp = [SKAction moveTo:[[initialPositionsArray objectAtIndex:i] CGPointValue] duration:0.3];
         [sprite runAction:moveUp completion:^{
             
@@ -419,30 +450,14 @@
     else
     {
         blackArea = [SKSpriteNode spriteNodeWithImageNamed:@"shavi 497.png"];
-        blackArea.position = CGPointMake(originalImage.position.x, originalImage.position.y);
-        [importImageNode addChild:blackArea];
+        blackArea.position = CGPointMake(0,0);
+        //[importImageNode addChild:blackArea];
+        [originalImage addChild:blackArea];
         // chveulebric=v suratebze 0.5 daimporebulze 1
         blackArea.xScale = blackArea.yScale = 1;
         blackArea.zPosition = 2;
         blackArea.name = @"blackkkk";
     }
-}
-
--(void) addimportImage
-{
-
-        SelectedImage = [SKSpriteNode spriteNodeWithColor:[UIColor purpleColor] size:CGSizeMake(50, 30)];
-        SelectedImage.position = CGPointMake (centerPozitionX + 180, centerPozitionY - 100);
-        SelectedImage.name = @"slectedImage";
-        [self addChild:SelectedImage];
-        SelectedImage.zPosition = 20;
-        
-        takeImage     = [SKSpriteNode spriteNodeWithColor:[UIColor purpleColor] size:CGSizeMake(50, 30)];
-        takeImage.position = CGPointMake(centerPozitionX-180, centerPozitionY -100);
-        takeImage.name = @"takeImage";
-        [self addChild:takeImage];
-        takeImage.zPosition = 20;
-    
 }
 
 -(void)woundingPuzzleForIpad:(UIImage *) cropImage
@@ -699,6 +714,24 @@
                                                       selector:@selector(movePuzzles)
                                                       userInfo:nil repeats:NO];
     
+}
+
+-(void) addImageCountur
+{
+    originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi.png"];
+    originImgContur.position = CGPointMake(158, 163);
+    [self addChild:originImgContur];
+    originImgContur.xScale = originImgContur.yScale = 0.5;
+    originImgContur.zPosition = 2;
+}
+
+-(void) addImageCounturSixteen
+{
+    originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi2 small.png"];
+    originImgContur.position = CGPointMake(158, 163);
+    [self addChild:originImgContur];
+    originImgContur.xScale = originImgContur.yScale = 0.5;
+    originImgContur.zPosition = 2;
 }
 
 -(void)addMaskPuzzle
@@ -1788,9 +1821,24 @@
     [blackArea removeAllActions];
     blackArea.texture = nil;
     
+    [importImageNode removeFromParent];
+    [importImageNode removeAllActions];
+    importImageNode.texture = nil;
+    
     if (IS_IPHONE)
     {
-        readyPictureNode = [SKSpriteNode spriteNodeWithImageNamed:self.animalName];
+        BOOL isselectedTakePicture = [[NSUserDefaults standardUserDefaults] boolForKey:@"iseSelectedTakePicture"];
+        if (isselectedTakePicture == YES)
+        {
+            //daimportebuli imigebis texturit sheqmili ready piqcheri
+            readyPictureNode = [SKSpriteNode spriteNodeWithTexture:saveTextureForimportImg];
+        }
+       else
+       {
+           // chveulebrivi suratebistvis wamogebuli cxovelis imigi.....
+           readyPictureNode = [SKSpriteNode spriteNodeWithImageNamed:self.animalName];
+       }
+        
         readyPictureNode.zPosition = 2;
         readyPictureNode.position  = CGPointMake(157, 163);
         readyPictureNode.xScale = readyPictureNode.yScale  = 0.495;
@@ -1861,139 +1909,6 @@
     }
 }
 
-- (UIImage *)croppIngimageByImageName:(UIImage *)imageToCrop toRect:(CGRect)rect
-{
-    //CGRect CropRect = CGRectMake(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height+15);
-    
-    CGImageRef imageRef = CGImageCreateWithImageInRect([imageToCrop CGImage], rect);
-    UIImage *cropped = [UIImage imageWithCGImage:imageRef];
-    CGImageRelease(imageRef);
-    
-    return cropped;
-}
-
-#pragma mark - Image Picker Controller delegate methods
-- (void) createPuzzle{
-    
-}
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
-{
-      [picker dismissViewControllerAnimated:NO completion:NULL];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self removeAllChildren];
-        [self removeAllActions];
-        originalImage.texture=nil;
-        originImgContur.texture=nil;
-        [self.scene removeAllChildren];
-        [self.scene removeAllActions];
-        
-        // [self loadBackground];
-        
-        for (int i=0; i<cropNodesArray.count; i++)
-        {
-            PuzzleSprite * sprite = [cropNodesArray objectAtIndex:i];
-            [sprite removeFromParent];
-            [sprite removeAllActions];
-            sprite.texture = nil;
-        }
-        
-        for (int i=0; i<readyPuzzlesArray.count; i++)
-        {
-            PuzzleSprite * sprite = [readyPuzzlesArray objectAtIndex:i];
-            [sprite removeAllActions];
-            sprite.texture = nil;
-        }
-        
-        UIImage *cropImage;
-        
-        if (picker.sourceType == UIImagePickerControllerSourceTypeCamera)
-        {
-            cropImage = info[UIImagePickerControllerOriginalImage];
-            
-            if (cropImage.imageOrientation == 1)
-            {
-                CGRect cropRect = CGRectMake((cropImage.size.width-cropImage.size.height)/2, 0, cropImage.size.height, cropImage.size.height);   // set frame as you need
-                cropImage = [self croppIngimageByImageName:cropImage toRect:cropRect];
-                cropImage = [UIImage imageWithCGImage:[cropImage CGImage] scale:1.0 orientation: UIImageOrientationDown];
-            }
-            
-            if (cropImage.imageOrientation == 0)
-            {
-                CGRect cropRect = CGRectMake((cropImage.size.width-cropImage.size.height)/2, 0, cropImage.size.height, cropImage.size.height);   // set frame as you need
-                cropImage = [self croppIngimageByImageName:cropImage toRect:cropRect];
-            }
-            if (cropImage.imageOrientation == 3)
-            {
-                CGRect cropRect = CGRectMake((cropImage.size.height-cropImage.size.width)/2, 0, cropImage.size.width, cropImage.size.width);   // set frame as you need
-                cropImage = [self croppIngimageByImageName:cropImage toRect:cropRect];
-                cropImage = [UIImage imageWithCGImage:[cropImage CGImage] scale:1.0 orientation: UIImageOrientationRight];
-            }
-        }
-        
-        if (picker.sourceType == UIImagePickerControllerSourceTypePhotoLibrary)
-        {
-            cropImage = info[UIImagePickerControllerEditedImage];
-            
-            if (cropImage.size.height<640)
-            {
-                CGRect cropRect = CGRectMake((cropImage.size.width-cropImage.size.height)/2, 0, cropImage.size.height, cropImage.size.height);   // set frame as you need
-                cropImage = [self croppIngimageByImageName:cropImage toRect:cropRect];
-            }
-        }
-        
-        CGSize size = CGSizeMake(497, 497);
-        if (IS_IPAD)
-        {
-            size = CGSizeMake(1228, 1228);
-        }
-        UIGraphicsBeginImageContext(size);
-        [cropImage drawInRect:CGRectMake(0,0,size.width, size.height)];
-        UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        
-        SKTexture *texture = [SKTexture textureWithImage:newImage];
-        importImageNode = [SKSpriteNode spriteNodeWithTexture:texture];
-        [importImageNode setAnchorPoint:CGPointMake(0.5, 0.5)];
-        importImageNode.position = CGPointMake(158, 162);
-        importImageNode.xScale = importImageNode.yScale = 0.5;
-        [self addChild:importImageNode];
-        importImageNode.zPosition = 1;
-        
-        if (IS_IPHONE)
-        {
-            [self woundingPuzzle:newImage];
-            // [self woundingSixteenPuzzle:newImage];
-            
-        }
-        
-        if (IS_IPAD)
-        {
-            importImageNode.position = CGPointMake(centerPozitionX-175, centerPozitionY);
-            //    [self originalImageContur];
-            //    [self woundingPuzzleForIpad:newImage];
-            [self woundingSixteenPuzzleForPad:newImage];
-        }
-        
-        //
-        
-        [self loadBackground];
-        
-        puzzlesMoveTimer = [NSTimer scheduledTimerWithTimeInterval:2
-                                                            target:self
-                                                          selector:@selector(movePuzzles)
-                                                          userInfo:nil repeats:NO];
-
-    });
-    
-  
-    
-}
-
-- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-    
-    [picker dismissViewControllerAnimated:YES completion:NULL];
-    
-}
 
 -(void) loadBackground
 {
@@ -2005,15 +1920,7 @@
         backgroundImg.xScale=backgroundImg.yScale=0.5;
         [self addChild:backgroundImg];
     }
-    if (IS_IPHONE_4)
-    {
-        backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background 960.jpg"];
-        backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
-        backgroundImg.zPosition=-5;
-        backgroundImg.xScale=backgroundImg.yScale=0.5;
-        [self addChild:backgroundImg];
-    }
-    if (IS_IPHONE_5)
+    if (isIphone5)
     {
         backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background_iphone5.jpg"];
         backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
@@ -2021,7 +1928,20 @@
         backgroundImg.xScale=backgroundImg.yScale=0.5;
         [self addChild:backgroundImg];
     }
+    else
+    {
+        backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background 960.jpg"];
+        backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
+        backgroundImg.zPosition=-5;
+        backgroundImg.xScale=backgroundImg.yScale=0.5;
+        [self addChild:backgroundImg];
+    }
     
+}
+
+-(void)dealloc
+{
+     
 }
 
 @end

@@ -16,11 +16,14 @@
 {
     [super viewDidLoad];
     
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"iseSelectedTakePicture"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
     // Configure the view.
     SKView * skView = (SKView *)self.view;
     
     SKScene *scene = [MenuScene sceneWithSize:skView.bounds.size];
-    scene.scaleMode = SKSceneScaleModeAspectFill;
+     scene.scaleMode = SKSceneScaleModeResizeFill;
     
     [skView presentScene:scene];
 }

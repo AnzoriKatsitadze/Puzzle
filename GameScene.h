@@ -7,13 +7,14 @@
 //
 
 #import "PuzzleSprite.h"
+#import "AVCamViewController.h"
 #import <SpriteKit/SpriteKit.h>
 static NSString * const completeAnNodeName = @"notMovable";
 
 @class MenuScene;
 @class PuzzleSprite;
 
-@interface GameScene : SKScene<UIImagePickerControllerDelegate, UINavigationControllerDelegate>
+@interface GameScene : SKScene<UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCamViewControllerDelegate>
 {
     //selected images property
     SKSpriteNode *importImageNode;
@@ -60,6 +61,10 @@ static NSString * const completeAnNodeName = @"notMovable";
     
     float centerPozitionX;
     float centerPozitionY;
+    
+    float uiscreenWidth;
+    float uiscreenHeight;
+    
     int zPositionCounter;
     
     NSMutableArray *initialPositionsArray;
@@ -73,6 +78,11 @@ static NSString * const completeAnNodeName = @"notMovable";
     SKSpriteNode *blackArea;
     
     SKSpriteNode *homeButton;
+    SKTexture *saveTextureForimportImg;
+    
+    BOOL isIphone5;
+    
+    AVCamViewController* avCamViewCont;
 }
 @property (nonatomic, assign) NSMutableArray * readyPuzzlesArray;
 @property (nonatomic, assign) BOOL    isRotate;
@@ -96,6 +106,9 @@ static NSString * const completeAnNodeName = @"notMovable";
 
 @property (nonatomic) int saveAnimalIndex;
 @property (nonatomic) NSString *animalName;
+
+@property (nonatomic, strong) UIImage *teakeImage;
+- (void) useImage;
 
 -(void) loadRedyPicture;
 - (void) updateZpositions:(PuzzleSprite *) sprite;
