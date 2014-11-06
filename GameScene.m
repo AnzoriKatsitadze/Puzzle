@@ -23,6 +23,8 @@
 #define IS_IPHONE_5 ( [ [ UIScreen mainScreen ] bounds ].size.width == WIDTH_IPHONE_5 )
 #define IS_IPHONE_4 ( [ [ UIScreen mainScreen ] bounds ].size.width == WIDTH_IPHONE_4 )
 
+#define IS_IPHONE_6      (fabs((double)[[UIScreen mainScreen]bounds].size.width - (double)667) < DBL_EPSILON)
+#define IS_IPHONE_6_PLUS (fabs((double)[[UIScreen mainScreen]bounds].size.width - (double)736) < DBL_EPSILON)
 
 #import "GameScene.h"
 #import "UIImage+Crop.h"
@@ -37,13 +39,10 @@
 {
     if (self = [super initWithSize:size])
     {
-       
-        
         cropNodesArray      = [[NSMutableArray alloc] init];
         PuzzlsArray         = [[NSMutableArray alloc] init];
         animalsArray        = [[NSMutableArray alloc] init];
         puzzlesSpritesArray = [[NSMutableArray alloc] init];
-        readyPuzzlesArray   = [[NSMutableArray alloc] init];
         
         initialPositionsArray     = [[NSMutableArray alloc] init];
         destinationPositionsArray = [[NSMutableArray alloc] init];
@@ -69,11 +68,7 @@
         zPositionCounter = 0;
         setPuzzlesCounter = 0;
         
-        homeButton = [SKSpriteNode spriteNodeWithImageNamed:@"home button 960.png"];
-        homeButton.xScale = homeButton.yScale = 0.5;
-        homeButton.position = CGPointMake(20, 300);
-        [self addChild:homeButton];
-        homeButton.name = @"homeButton";
+        [self loadHomeButton];
         
         isIphone5 = [self isHdRes];
         
@@ -81,37 +76,22 @@
         
         if (IS_IPAD)
         {
-            self.scaleIn = 1;
             self.scaleOut = 0.75;
-            self.JumpScale = 1.1;
-            self.moveArea = 720;
-            self.maxMveX  = 1020;
-            self.maxMoveY = 740;
-            self.minMoveY = 10;
-            self.scaleForSelectedImg = 1.0;
-        }
-       
-        if (isIphone5)
-        {
-            self.scaleIn = 1;
-            self.scaleOut = 1;
-            self.JumpScale = 1.1;
-            self.moveArea  = 350;
-            self.maxMveX   = 520;
-            self.maxMoveY  = 278;
-            self.minMoveY  = 45;
             self.scaleForSelectedImg = 1.0;
         }
         else
         {
-            self.maxMveX = 443;
-            self.minMoveY = 37;
-            self.maxMoveY = 285;
-            self.moveArea = 335;
-            self.scaleOut = 1;
-            self.scaleIn = 1;
-            self.JumpScale = 1.1;
-            self.scaleForSelectedImg = 1.0;
+            if (isIphone5)
+            {
+                self.scaleForSelectedImg = 1.0;
+                if (IS_IPHONE_6) {
+                    self.scaleForSelectedImg=1.18;
+                }
+            }
+            else
+            {
+                self.scaleForSelectedImg = 1.0;
+            }
         }
         
         self.saveAnimalIndex = [[NSUserDefaults standardUserDefaults] integerForKey:@"saveAnimalIndex"];
@@ -121,6 +101,15 @@
         for (int i = 0; i<PuzzlsArray.count; i++)
         {
             [animalsArray addObject:PuzzlsArray[i][@"name"]];
+        
+        }
+        if (IS_IPAD)
+        {
+            [animalsArray removeAllObjects];
+            for (int i = 0; i<PuzzlsArray.count; i++)
+            {
+                [animalsArray addObject:PuzzlsArray[i][@"name_Pad"]];
+            }
         }
         self.animalName = [animalsArray objectAtIndex:self.saveAnimalIndex];
         
@@ -150,34 +139,101 @@
     return self;
 }
 
+-(void)loadHomeButton
+{
+    if (IS_IPAD)
+    {
+        homeButton = [SKSpriteNode spriteNodeWithImageNamed:@"home button.png"];
+        homeButton.xScale = homeButton.yScale = 0.35;
+        homeButton.position = CGPointMake(50, 730);
+        [self addChild:homeButton];
+        homeButton.name = @"homeButton";
+    }
+    else
+    {
+        homeButton = [SKSpriteNode spriteNodeWithImageNamed:@"home button 960.png"];
+        homeButton.xScale = homeButton.yScale = 0.5;
+        homeButton.position = CGPointMake(20, 300);
+        if (IS_IPHONE_6) {
+            homeButton.position = CGPointMake(20, 350);
+        }
+        [self addChild:homeButton];
+        homeButton.name = @"homeButton";
+    }
+}
+
 - (void) useImage
 {
     SKTexture *texture = [SKTexture textureWithImage:_teakeImage];
     saveTextureForimportImg = texture;
     originalImage = [SKSpriteNode spriteNodeWithTexture:texture];
+    originalImage.xScale = originalImage.yScale = 0.5;
+    if (IS_IPAD) {
+        originalImage.position = CGPointMake(centerPozitionX-175, centerPozitionY);
+    }else{
     originalImage.position = CGPointMake(158, 162);
+        if (IS_IPHONE_6) {
+            originalImage.position = CGPointMake(180, centerPozitionY);
+            originalImage.xScale = 0.586;
+            originalImage.yScale = 0.586;
+        }
+    }
     originalImage.zPosition = 1;
     originalImage.name = @"aaaaaaa";
-    originalImage.xScale = originalImage.yScale = 0.5;
     [self addChild:originalImage];
     
     NSString *savedValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"preferenceName"];
-    if ([savedValue isEqualToString:@"easyBoard"])
-    {
-        [self woundingPuzzle:_teakeImage];
-        [self addImageCountur];
-    }
-    if ([savedValue isEqualToString:@"hardBoard"])
-    {
-        [self woundingSixteenPuzzle:_teakeImage];
-        [self addImageCounturSixteen];
-    }
-    [self loadBackground];
     
-    puzzlesMoveTimer = [NSTimer scheduledTimerWithTimeInterval:2
-                                                        target:self
-                                                      selector:@selector(movePuzzles)
-                                                      userInfo:nil repeats:NO];
+    if (IS_IPAD)
+    {
+        if ([savedValue isEqualToString:@"easyBoard"])
+        {
+            [self woundingPuzzleForIpad:_teakeImage];
+            addImageConturTimer = [NSTimer scheduledTimerWithTimeInterval:0.8
+                                                                   target:self
+                                                                 selector:@selector(addImageCountur)
+                                                                 userInfo:nil repeats:NO];
+        }
+        if ([savedValue isEqualToString:@"hardBoard"])
+        {
+            [self woundingSixteenPuzzleForPad:_teakeImage];
+            addImageConturTimer = [NSTimer scheduledTimerWithTimeInterval:0.8
+                                                                   target:self
+                                                                 selector:@selector(addImageCounturSixteen)
+                                                                 userInfo:nil repeats:NO];
+        }
+        [self loadBackground];
+        puzzlesMoveTimer = [NSTimer scheduledTimerWithTimeInterval:2
+                                                            target:self
+                                                          selector:@selector(movePuzzles)
+                                                          userInfo:nil repeats:NO];
+    }
+    else
+    {
+        if ([savedValue isEqualToString:@"easyBoard"])
+        {
+            [self woundingPuzzle:_teakeImage];
+            addImageConturTimer = [NSTimer scheduledTimerWithTimeInterval:0.8
+                                                                   target:self
+                                                                 selector:@selector(addImageCountur)
+                                                                 userInfo:nil repeats:NO];
+        }
+        if ([savedValue isEqualToString:@"hardBoard"])
+        {
+            [self woundingSixteenPuzzle:_teakeImage];
+            addImageConturTimer = [NSTimer scheduledTimerWithTimeInterval:0.8
+                                                                   target:self
+                                                                 selector:@selector(addImageCounturSixteen)
+                                                                 userInfo:nil repeats:NO];
+        }
+        [self loadBackground];
+        puzzlesMoveTimer = [NSTimer scheduledTimerWithTimeInterval:2
+                                                            target:self
+                                                          selector:@selector(movePuzzles)
+                                                          userInfo:nil repeats:NO];
+    }
+    
+ 
 }
 
 - (BOOL) isHdRes
@@ -244,11 +300,17 @@
     originalImage.position = CGPointMake(158, 162);
     originalImage.xScale = originalImage.yScale = 0.5;
     [self addChild:originalImage];
+    
+    if (IS_IPHONE_6) {
+        originalImage.position = CGPointMake(180, centerPozitionY);
+        originalImage.xScale = 0.586;
+        originalImage.yScale = 0.586;
+    }
 }
 
 -(void) addOriginalAndBlackPicturesForPad
 {
-    originalImage = [SKSpriteNode spriteNodeWithImageNamed:@"spilo_pad.png"];
+    originalImage = [SKSpriteNode spriteNodeWithImageNamed:self.animalName];
     originalImage.position = CGPointMake(centerPozitionX-175, centerPozitionY);
     originalImage.xScale = originalImage.yScale = 0.5;
     [self addChild:originalImage];
@@ -262,17 +324,21 @@
     {
         screenResolution = @"iPad";
     }
-    
-    if (isIphone5)
-    {
-        screenResolution = @"r4";
-    }
     else
     {
-        screenResolution = @"r3.5";
+        if (isIphone5)
+        {
+            screenResolution = @"r4";
+            if (IS_IPHONE_6) {
+                screenResolution = @"r4.5";
+            }
+        }
+        else
+        {
+            screenResolution = @"r3.5";
+        }
     }
-    
-       destinationPosition = array[0][screenResolution][@"destinationPosition"];
+    destinationPosition = array[0][screenResolution][@"destinationPosition"];
     
     
     CGPoint point = CGPointMake([destinationPosition[@"x"] intValue], [destinationPosition[@"y"] intValue]);
@@ -295,18 +361,21 @@
     {
         screenResolution = @"iPad";
     }
-    
-    if (isIphone5)
-    {
-        screenResolution = @"r4";
-    }
     else
     {
-        screenResolution = @"r3.5";
+        if (isIphone5)
+        {
+            screenResolution = @"r4";
+            if (IS_IPHONE_6) {
+                screenResolution = @"r4.5";
+            }
+        }
+        else
+        {
+            screenResolution = @"r3.5";
+        }
     }
-    
     destinationPosition = array[0][screenResolution][@"destinationPosition"];
-    
     
     CGPoint point = CGPointMake([destinationPosition[@"x"] intValue], [destinationPosition[@"y"] intValue]);
     [destinationPositionsArray addObject:[NSValue valueWithCGPoint:point]];
@@ -365,7 +434,6 @@
 - (NSMutableArray *) getPazzlsArray
 {
     NSString *arrayName = [NSString stringWithFormat:@"OriginAnimals"];
-    //   if(IS_IPAD) arrayName = [arrayName stringByAppendingString:@"_ipad"];
     NSArray * array = [[NSArray alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:arrayName ofType:@"plist"]];
     return  [[NSMutableArray alloc] initWithArray:array];
 }
@@ -445,15 +513,18 @@
 {
     if (IS_IPAD)
     {
-        
+        blackArea = [SKSpriteNode spriteNodeWithImageNamed:@"shavi pedi.png"];
+        blackArea.position = CGPointMake(0,0);
+        [originalImage addChild:blackArea];
+        blackArea.xScale = blackArea.yScale = 1;
+        blackArea.zPosition = 2;
+        blackArea.name = @"blackkkk";
     }
     else
     {
         blackArea = [SKSpriteNode spriteNodeWithImageNamed:@"shavi 497.png"];
         blackArea.position = CGPointMake(0,0);
-        //[importImageNode addChild:blackArea];
         [originalImage addChild:blackArea];
-        // chveulebric=v suratebze 0.5 daimporebulze 1
         blackArea.xScale = blackArea.yScale = 1;
         blackArea.zPosition = 2;
         blackArea.name = @"blackkkk";
@@ -683,7 +754,7 @@
     sprite9.position = CGPointMake(537, 182);
     sprite9.touchArrea = CGRectMake(sprite9.position.x-sprite9.frame.size.width/2, sprite9.position.y-sprite9.frame.size.height/2, 200, 200);
     [self addChild:sprite9];
-    sprite8.userInteractionEnabled = YES;
+    sprite9.userInteractionEnabled = YES;
     sprite9.destinationPosition = sprite9.position;
     [cropNodesArray addObject:sprite9];
 
@@ -693,8 +764,8 @@
 {
     originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi_Pad"];
     originImgContur.position = CGPointMake(centerPozitionX-175, centerPozitionY);
-    [self addChild:originImgContur];
     originImgContur.xScale = originImgContur.yScale = 0.5;
+    [self addChild:originImgContur];
     originImgContur.zPosition = 2;
 }
 
@@ -702,7 +773,7 @@
 {
     [self originalImageContur];
     
-    UIImage *cropImage = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"spilo_pad" ofType:@"png"]];
+    UIImage *cropImage = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:[self.animalName stringByDeletingPathExtension] ofType:self.animalName.pathExtension]];
     
     [self woundingPuzzleForIpad:cropImage];
     
@@ -718,28 +789,65 @@
 
 -(void) addImageCountur
 {
-    originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi.png"];
-    originImgContur.position = CGPointMake(158, 163);
-    [self addChild:originImgContur];
-    originImgContur.xScale = originImgContur.yScale = 0.5;
-    originImgContur.zPosition = 2;
+    if (IS_IPAD) {
+        originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@""];
+        originImgContur.position = CGPointMake(centerPozitionX-175, centerPozitionY);
+        [self addChild:originImgContur];
+        originImgContur.xScale = originImgContur.yScale = 0.5;
+        originImgContur.zPosition = 2;
+    }else
+    {
+        originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi.png"];
+        originImgContur.position = CGPointMake(158, 163);
+         originImgContur.xScale = originImgContur.yScale = 0.5;
+        if (IS_IPHONE_6) {
+            originImgContur.position = CGPointMake(180, centerPozitionY);
+            originImgContur.xScale = originImgContur.yScale = 0.59;
+        }
+        [self addChild:originImgContur];
+        originImgContur.zPosition = 2;
+    }
+    [addImageConturTimer invalidate];
+    addImageConturTimer=nil;
 }
 
 -(void) addImageCounturSixteen
 {
-    originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi2 small.png"];
-    originImgContur.position = CGPointMake(158, 163);
-    [self addChild:originImgContur];
-    originImgContur.xScale = originImgContur.yScale = 0.5;
-    originImgContur.zPosition = 2;
+    if (IS_IPAD)
+    {
+        originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazliskontur_16.png"];
+        originImgContur.position = CGPointMake(centerPozitionX-175, centerPozitionY);
+        [self addChild:originImgContur];
+        originImgContur.xScale = originImgContur.yScale = 0.5;
+        originImgContur.zPosition = 2;
+    }
+    else
+    {
+        originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi2 small.png"];
+        originImgContur.position = CGPointMake(158, 163);
+        originImgContur.xScale = originImgContur.yScale = 0.5;
+        if (IS_IPHONE_6) {
+            originImgContur.position = CGPointMake(180, centerPozitionY);
+            originImgContur.xScale = originImgContur.yScale = 0.586;
+        }
+        [self addChild:originImgContur];
+        originImgContur.zPosition = 2;
+    }
+    [addImageConturTimer invalidate];
+    addImageConturTimer=nil;
 }
 
 -(void)addMaskPuzzle
 {
     originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi.png"];
     originImgContur.position = CGPointMake(158, 163);
-    [self addChild:originImgContur];
     originImgContur.xScale = originImgContur.yScale = 0.5;
+    
+    [self addChild:originImgContur];
+    if (IS_IPHONE_6) {
+        originImgContur.position = CGPointMake(180, centerPozitionY);
+        originImgContur.xScale = originImgContur.yScale = 0.59;
+    }
     originImgContur.zPosition = 2;
     //
     UIImage *image = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:[self.animalName stringByDeletingPathExtension] ofType:self.animalName.pathExtension]];
@@ -764,7 +872,7 @@
     originImgContur.xScale = originImgContur.yScale = 0.5;
     originImgContur.zPosition = 2;
     
-    UIImage *cropImage = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"spilo_pad" ofType:@"png"]];
+    UIImage *cropImage = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:[self.animalName stringByDeletingPathExtension] ofType:self.animalName.pathExtension]];
     
     [self woundingSixteenPuzzleForPad:cropImage];
     
@@ -1191,8 +1299,12 @@
 {
     originImgContur = [SKSpriteNode spriteNodeWithImageNamed:@"pazlis konturebi2 small.png"];
     originImgContur.position = CGPointMake(158, 163);
-    [self addChild:originImgContur];
     originImgContur.xScale = originImgContur.yScale = 0.5;
+    if (IS_IPHONE_6) {
+        originImgContur.position=CGPointMake(180, centerPozitionY);
+        originImgContur.xScale = originImgContur.yScale = 0.586;
+    }
+    [self addChild:originImgContur];
     originImgContur.zPosition = 2;
     
     UIImage *image = [[UIImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:[self.animalName stringByDeletingPathExtension] ofType:self.animalName.pathExtension]];
@@ -1396,6 +1508,9 @@
     sprite1.gameScene = self;
     [sprite1 addChild:scropNode1];
     sprite1.position = CGPointMake(75, 257);
+    if (IS_IPHONE_6) {
+        sprite1.position=CGPointMake(83, 298);
+    }
     sprite1.touchArrea = CGRectMake(sprite1.position.x - sprite1.frame.size.width/2, /*320 -*/ sprite1.position.y - sprite1.frame.size.height/2, 80, 80);
     [self addChild:sprite1];
     sprite1.userInteractionEnabled = YES;
@@ -1408,6 +1523,9 @@
     sprite2.gameScene = self;
     [sprite2 addChild:scropNode2];
     sprite2.position = CGPointMake(126, 247);
+    if (IS_IPHONE_6) {
+        sprite2.position=CGPointMake(143, 286);
+    }
     sprite2.touchArrea = CGRectMake(sprite2.position.x - sprite2.frame.size.width/2, /*320 -*/ sprite2.position.y - sprite2.frame.size.height/2, 80, 80);
     [self addChild:sprite2];
     sprite2.userInteractionEnabled = YES;
@@ -1420,6 +1538,9 @@
     sprite3.gameScene = self;
     [sprite3 addChild:scropNode3];
     sprite3.position = CGPointMake(189, 257);
+    if (IS_IPHONE_6) {
+        sprite3.position=CGPointMake(216, 298);
+    }
     sprite3.touchArrea = CGRectMake(sprite3.position.x - sprite3.frame.size.width/2, /*320 -*/ sprite3.position.y - sprite3.frame.size.height/2, 80, 80);
     [self addChild:sprite3];
     sprite3.userInteractionEnabled = YES;
@@ -1432,6 +1553,9 @@
     sprite4.gameScene = self;
     [sprite4 addChild:scropNode4];
     sprite4.position = CGPointMake(250, 247);
+    if (IS_IPHONE_6) {
+        sprite4.position=CGPointMake(288, 286);
+    }
     sprite4.touchArrea = CGRectMake(sprite4.position.x - sprite4.frame.size.width/2, /*320 -*/ sprite4.position.y - sprite4.frame.size.height/2, 80, 80);
     [self addChild:sprite4];
     sprite4.userInteractionEnabled = YES;
@@ -1444,6 +1568,9 @@
     sprite5.gameScene = self;
     [sprite5 addChild:scropNode5];
     sprite5.position = CGPointMake(65, 198);
+    if (IS_IPHONE_6) {
+        sprite5.position=CGPointMake(71, 228);
+    }
     sprite5.touchArrea = CGRectMake(sprite5.position.x - sprite5.frame.size.width/2, /*320 -*/ sprite5.position.y - sprite5.frame.size.height/2, 80, 80);
     [self addChild:sprite5];
     sprite5.userInteractionEnabled = YES;
@@ -1456,6 +1583,9 @@
     sprite6.gameScene = self;
     [sprite6 addChild:scropNode6];
     sprite6.position = CGPointMake(126, 198);
+    if (IS_IPHONE_6) {
+        sprite6.position=CGPointMake(143, 228);
+    }
     sprite6.touchArrea = CGRectMake(sprite6.position.x - sprite6.frame.size.width/2, /*320 -*/ sprite6.position.y - sprite6.frame.size.height/2, 80, 80);
     [self addChild:sprite6];
     sprite6.userInteractionEnabled = YES;
@@ -1468,6 +1598,9 @@
     sprite7.gameScene = self;
     [sprite7 addChild:scropNode7];
     sprite7.position = CGPointMake(190, 197);
+    if (IS_IPHONE_6) {
+        sprite7.position=CGPointMake(217, 228);
+    }
     sprite7.touchArrea = CGRectMake(sprite7.position.x - sprite7.frame.size.width/2, /*320 -*/ sprite7.position.y - sprite7.frame.size.height/2, 80, 80);
     [self addChild:sprite7];
     sprite7.userInteractionEnabled = YES;
@@ -1480,6 +1613,9 @@
     sprite8.gameScene = self;
     [sprite8 addChild:scropNode8];
     sprite8.position = CGPointMake(241, 197);
+    if (IS_IPHONE_6) {
+        sprite8.position=CGPointMake(277, 227);
+    }
     sprite8.touchArrea = CGRectMake(sprite8.position.x - sprite8.frame.size.width/2, /*320 -*/ sprite8.position.y - sprite8.frame.size.height/2, 80, 80);
     [self addChild:sprite8];
     sprite8.userInteractionEnabled = YES;
@@ -1492,6 +1628,9 @@
     sprite9.gameScene = self;
     [sprite9 addChild:scropNode9];
     sprite9.position = CGPointMake(75, 134);
+    if (IS_IPHONE_6) {
+        sprite9.position=CGPointMake(83, 154);
+    }
     sprite9.touchArrea = CGRectMake(sprite9.position.x - sprite9.frame.size.width/2, /*320 -*/ sprite9.position.y - sprite9.frame.size.height/2, 80, 80);
     [self addChild:sprite9];
     sprite9.userInteractionEnabled = YES;
@@ -1504,6 +1643,9 @@
     sprite10.gameScene = self;
     [sprite10 addChild:scropNode10];
     sprite10.position = CGPointMake(126, 134);
+    if (IS_IPHONE_6) {
+        sprite10.position=CGPointMake(143, 154);
+    }
     sprite10.touchArrea = CGRectMake(sprite10.position.x - sprite10.frame.size.width/2, /*320 -*/ sprite10.position.y - sprite10.frame.size.height/2, 80, 80);
     [self addChild:sprite10];
     sprite10.userInteractionEnabled = YES;
@@ -1516,6 +1658,9 @@
     sprite11.gameScene = self;
     [sprite11 addChild:scropNode11];
     sprite11.position = CGPointMake(190, 134);
+    if (IS_IPHONE_6) {
+        sprite11.position=CGPointMake(217, 154);
+    }
     sprite11.touchArrea = CGRectMake(sprite11.position.x - sprite11.frame.size.width/2, /*320 -*/ sprite11.position.y - sprite11.frame.size.height/2, 80, 80);
     [self addChild:sprite11];
     sprite11.userInteractionEnabled = YES;
@@ -1528,6 +1673,9 @@
     sprite12.gameScene = self;
     [sprite12 addChild:scropNode12];
     sprite12.position = CGPointMake(250, 134);
+    if (IS_IPHONE_6) {
+        sprite12.position=CGPointMake(289, 153);
+    }
     sprite12.touchArrea = CGRectMake(sprite12.position.x - sprite12.frame.size.width/2, /*320 -*/ sprite12.position.y - sprite12.frame.size.height/2, 80, 80);
     [self addChild:sprite12];
     sprite12.userInteractionEnabled = YES;
@@ -1540,6 +1688,9 @@
     sprite13.gameScene = self;
     [sprite13 addChild:scropNode13];
     sprite13.position = CGPointMake(65, 81);
+    if (IS_IPHONE_6) {
+        sprite13.position=CGPointMake(71, 92);
+    }
     sprite13.touchArrea = CGRectMake(sprite13.position.x - sprite13.frame.size.width/2, /*320 -*/ sprite13.position.y - sprite13.frame.size.height/2, 80, 80);
     [self addChild:sprite13];
     sprite13.userInteractionEnabled = YES;
@@ -1552,6 +1703,9 @@
     sprite14.gameScene = self;
     [sprite14 addChild:scropNode14];
     sprite14.position = CGPointMake(126, 72);
+    if (IS_IPHONE_6) {
+        sprite14.position=CGPointMake(143, 81);
+    }
     sprite14.touchArrea = CGRectMake(sprite14.position.x - sprite14.frame.size.width/2, /*320 -*/ sprite14.position.y - sprite14.frame.size.height/2, 80, 80);
     [self addChild:sprite14];
     sprite14.userInteractionEnabled = YES;
@@ -1564,6 +1718,9 @@
     sprite15.gameScene = self;
     [sprite15 addChild:scropNode15];
     sprite15.position = CGPointMake(190, 82);
+    if (IS_IPHONE_6) {
+        sprite15.position=CGPointMake(217, 93);
+    }
     sprite15.touchArrea = CGRectMake(sprite15.position.x - sprite15.frame.size.width/2, /*320 -*/ sprite15.position.y - sprite15.frame.size.height/2, 80, 80);
     [self addChild:sprite15];
     sprite15.userInteractionEnabled = YES;
@@ -1576,6 +1733,9 @@
     sprite16.gameScene = self;
     [sprite16 addChild:scropNode16];
     sprite16.position = CGPointMake(241, 72);
+    if (IS_IPHONE_6) {
+        sprite16.position=CGPointMake(277, 80);
+    }
     sprite16.touchArrea = CGRectMake(sprite16.position.x - sprite16.frame.size.width/2, /*320 -*/ sprite16.position.y - sprite16.frame.size.height/2, 80, 80);
     [self addChild:sprite16];
     sprite16.userInteractionEnabled = YES;
@@ -1705,6 +1865,9 @@
     sprite1.gameScene = self;
     [sprite1 addChild:scropNode1];
     sprite1.position = CGPointMake(76, 244);
+    if (IS_IPHONE_6) {
+        sprite1.position = CGPointMake(84, 283);
+    }
     sprite1.touchArrea = CGRectMake(sprite1.position.x - sprite1.frame.size.width/2, /*320 -*/ sprite1.position.y - sprite1.frame.size.height/2, 80, 80);
     [self addChild:sprite1];
     sprite1.userInteractionEnabled = YES;
@@ -1717,6 +1880,9 @@
     sprite2.gameScene = self;
     [sprite2 addChild:scropNode2];
     sprite2.position = CGPointMake(157, 235);
+    if (IS_IPHONE_6) {
+        sprite2.position = CGPointMake(179, 272);
+    }
     sprite2.touchArrea = CGRectMake(sprite2.position.x - sprite2.frame.size.width/2, 320 - sprite2.position.y - sprite2.frame.size.height/2, 80, 80);
     [self addChild:sprite2];
     sprite2.userInteractionEnabled = YES;
@@ -1729,6 +1895,9 @@
     sprite3.gameScene = self;
     [sprite3 addChild:scropNode3];
     sprite3.position = CGPointMake(238, 244);
+    if (IS_IPHONE_6) {
+        sprite3.position=CGPointMake(275, 282.5);
+    }
     sprite3.touchArrea = CGRectMake(sprite3.position.x - sprite3.frame.size.width/2, 320 - sprite3.position.y - sprite3.frame.size.height/2, 80, 80);
     [self addChild:sprite3];
     sprite3.userInteractionEnabled = YES;
@@ -1741,6 +1910,9 @@
     sprite4.gameScene = self;
     [sprite4 addChild:scropNode4];
     sprite4.position = CGPointMake(85, 163);
+    if (IS_IPHONE_6) {
+        sprite4.position=CGPointMake(94, 188);
+    }
     sprite4.touchArrea = CGRectMake(sprite4.position.x - sprite4.frame.size.width/2, 320 - sprite4.position.y - sprite4.frame.size.height/2, 80, 80);
     [self addChild:sprite4];
     sprite4.userInteractionEnabled = YES;
@@ -1753,6 +1925,9 @@
     sprite5.gameScene = self;
     [sprite5 addChild:scropNode5];
     sprite5.position = CGPointMake(157, 163);
+    if (IS_IPHONE_6) {
+        sprite5.position=CGPointMake(179, 187);
+    }
     sprite5.touchArrea = CGRectMake(sprite5.position.x - sprite5.frame.size.width/2, 320 - sprite5.position.y - sprite5.frame.size.height/2, 80, 80);
     [self addChild:sprite5];
     sprite5.userInteractionEnabled = YES;
@@ -1765,6 +1940,9 @@
     sprite6.gameScene = self;
     [sprite6 addChild:scropNode6];
     sprite6.position = CGPointMake(230, 163);
+    if (IS_IPHONE_6) {
+        sprite6.position=CGPointMake(263.5, 187);
+    }
     sprite6.touchArrea = CGRectMake(sprite6.position.x - sprite6.frame.size.width/2, 320 - sprite6.position.y - sprite6.frame.size.height/2, 80, 80);
     [self addChild:sprite6];
     sprite6.userInteractionEnabled = YES;
@@ -1777,6 +1955,9 @@
     sprite7.gameScene = self;
     [sprite7 addChild:scropNode7];
     sprite7.position = CGPointMake(76, 81);
+    if (IS_IPHONE_6) {
+        sprite7.position=CGPointMake(83.5, 92);
+    }
     sprite7.touchArrea = CGRectMake(sprite7.position.x - sprite7.frame.size.width/2, 320 - sprite7.position.y - sprite7.frame.size.height/2, 80, 80);
     [self addChild:sprite7];
     sprite7.userInteractionEnabled = YES;
@@ -1789,6 +1970,9 @@
     sprite8.gameScene = self;
     [sprite8 addChild:scropNode8];
     sprite8.position = CGPointMake(157, 90);
+    if (IS_IPHONE_6) {
+        sprite8.position=CGPointMake(178, 102);
+    }
     sprite8.touchArrea = CGRectMake(sprite8.position.x - sprite8.frame.size.width/2, 320 - sprite8.position.y - sprite8.frame.size.height/2, 80, 80);
     [self addChild:sprite8];
     sprite8.userInteractionEnabled = YES;
@@ -1801,6 +1985,9 @@
     sprite9.gameScene = self;
     [sprite9 addChild:scropNode9];
     sprite9.position = CGPointMake(239, 81);
+    if (IS_IPHONE_6) {
+        sprite9.position=CGPointMake(274, 92);
+    }
     sprite9.touchArrea = CGRectMake(sprite9.position.x - sprite9.frame.size.width/2, 320 - sprite9.position.y - sprite9.frame.size.height/2, 80, 80);
     [self addChild:sprite9];
     sprite9.userInteractionEnabled = YES;
@@ -1830,7 +2017,7 @@
         BOOL isselectedTakePicture = [[NSUserDefaults standardUserDefaults] boolForKey:@"iseSelectedTakePicture"];
         if (isselectedTakePicture == YES)
         {
-            //daimportebuli imigebis texturit sheqmili ready piqcheri
+            //daimportebuli imigebis texturit sheqmili ready piqcheri.....
             readyPictureNode = [SKSpriteNode spriteNodeWithTexture:saveTextureForimportImg];
         }
        else
@@ -1839,10 +2026,19 @@
            readyPictureNode = [SKSpriteNode spriteNodeWithImageNamed:self.animalName];
        }
         
-        readyPictureNode.zPosition = 2;
-        readyPictureNode.position  = CGPointMake(157, 163);
-        readyPictureNode.xScale = readyPictureNode.yScale  = 0.495;
-        [self addChild:readyPictureNode];
+        if (IS_IPHONE_6) {
+            readyPictureNode.zPosition = 2;
+            readyPictureNode.position  = CGPointMake(180, centerPozitionY);
+            readyPictureNode.xScale = readyPictureNode.yScale  = 0.59;
+            [self addChild:readyPictureNode];
+        }
+        else
+        {
+            readyPictureNode.zPosition = 2;
+            readyPictureNode.position  = CGPointMake(157, 163);
+            readyPictureNode.xScale = readyPictureNode.yScale  = 0.495;
+            [self addChild:readyPictureNode];
+        }
         
         for (int i=0; i<cropNodesArray.count; i++)
         {
@@ -1855,20 +2051,24 @@
         SKAction *moveAction = [SKAction moveTo:CGPointMake(centerPozitionX, centerPozitionY) duration:0.5];
         [readyPictureNode runAction:moveAction];
         
-        SKAction *scaleAction = [SKAction scaleTo:0.55 duration:0.5];
-        [readyPictureNode runAction:scaleAction];
+        if (IS_IPHONE_6) {
+            SKAction *scaleAction = [SKAction scaleTo:0.67 duration:0.5];
+            [readyPictureNode runAction:scaleAction];
+        }else{
+            SKAction *scaleAction = [SKAction scaleTo:0.55 duration:0.5];
+            [readyPictureNode runAction:scaleAction];
+        }
     }
     else
     {
-        readyPictureNode = [SKSpriteNode spriteNodeWithImageNamed:@"spilo_pad.png"];
+        readyPictureNode = [SKSpriteNode spriteNodeWithImageNamed:self.animalName];
         readyPictureNode.zPosition = 2;
         readyPictureNode.position  = CGPointMake(centerPozitionX-175, centerPozitionY);
         readyPictureNode.xScale = readyPictureNode.yScale  = 0.495;
         [self addChild:readyPictureNode];
         
-        for (int i=0; i<readyPuzzlesArray.count; i++)
-        {
-            PuzzleSprite * sprite = [readyPuzzlesArray objectAtIndex:i];
+        for (int i=0; i<cropNodesArray.count; i++){
+            PuzzleSprite * sprite = [cropNodesArray objectAtIndex:i];
             [sprite removeFromParent];
             [sprite removeAllActions];
             sprite.texture = nil;
@@ -1920,23 +2120,28 @@
         backgroundImg.xScale=backgroundImg.yScale=0.5;
         [self addChild:backgroundImg];
     }
-    if (isIphone5)
-    {
-        backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background_iphone5.jpg"];
-        backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
-        backgroundImg.zPosition=-5;
-        backgroundImg.xScale=backgroundImg.yScale=0.5;
-        [self addChild:backgroundImg];
-    }
     else
     {
-        backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background 960.jpg"];
-        backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
-        backgroundImg.zPosition=-5;
-        backgroundImg.xScale=backgroundImg.yScale=0.5;
-        [self addChild:backgroundImg];
+        if (isIphone5)
+        {
+            backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background_iphone5.jpg"];
+            backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
+            backgroundImg.zPosition=-5;
+            backgroundImg.xScale=backgroundImg.yScale=0.5;
+            if (IS_IPHONE_6) {
+                 backgroundImg.xScale=backgroundImg.yScale=0.59;
+            }
+            [self addChild:backgroundImg];
+        }
+        else
+        {
+            backgroundImg = [SKSpriteNode spriteNodeWithImageNamed:@"background 960.jpg"];
+            backgroundImg.position = CGPointMake(centerPozitionX, centerPozitionY);
+            backgroundImg.zPosition=-5;
+            backgroundImg.xScale=backgroundImg.yScale=0.5;
+            [self addChild:backgroundImg];
+        }
     }
-    
 }
 
 -(void)dealloc

@@ -36,7 +36,6 @@ static NSString * const completeAnNodeName = @"notMovable";
     CGPoint curTouchPoint;
     CGPoint previousTouchPoint;
     
-    NSMutableArray * readyPuzzlesArray;
     NSMutableArray * cropNodesArray;
     NSMutableArray * PuzzlsArray;
     NSMutableArray * animalsArray;
@@ -48,6 +47,7 @@ static NSString * const completeAnNodeName = @"notMovable";
     NSTimer *puzzlesMoveTimer;
     NSTimer *addMaskTime;
     NSTimer *addOriginAndblackPTimer;
+    NSTimer *addImageConturTimer;
     
     // 16 puzzles Timer
     NSTimer *addOriginAndblackPTimerForSixTeen;
@@ -84,14 +84,14 @@ static NSString * const completeAnNodeName = @"notMovable";
     
     AVCamViewController* avCamViewCont;
 }
-@property (nonatomic, assign) NSMutableArray * readyPuzzlesArray;
 @property (nonatomic, assign) BOOL    isRotate;
 
 @property (nonatomic, assign) CGPoint savePuzzlePoint;
 
 @property (strong, nonatomic) UIWindow *window;
 @property (nonatomic, assign) float puzzleRotate;
-@property (nonatomic, assign) int setPuzzlesCounter;
+
+@property (nonatomic) int setPuzzlesCounter;
 
 @property (nonatomic) float scaleIn;
 @property (nonatomic) float scaleOut;
